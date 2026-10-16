@@ -1,0 +1,33 @@
+name: Deploy Portfolio to S3
+
+on:
+  push:
+    branches:
+      - main # This triggers the deployment when you push to the main branch
+
+# REQUIRED: Allows GitHub to request the secure OIDC token from AWS
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials using OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ap-south-1 # Mumbai region
+
+      # Syncs files, deletes removed files, and ignores Git configuration files
+      - name: Deploy to S3 Bucket
+        run: |
+          aws s3 sync . s3://yash-portfolio-web-2026 \
+            --delete \
+            --exclude ".git/*" \
+            --exclude ".github/*" \
+            --exclude ".gitignore"
